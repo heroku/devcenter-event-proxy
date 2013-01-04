@@ -1,13 +1,20 @@
 require './config'
 require 'goliath/rack/templates'
+require 'em-synchrony/em-http'
+require './lib/parsers/devcenter_message_parser'
 
 class HerokuLogDrain < Goliath::API
 
   include Goliath::Rack::Templates
 
+  EVENT_MANAGER_HEADERS = {
+    'content-type' => 'application/json',
+    'authorization' => ENV.values_at("EVENT_MANAGER_API_USER", "EVENT_MANAGER_API_PASSWORD")
+  }
+
   # If we've explicitly set auth, check for it. Otherwise, buyer-beware!
   if(['HTTP_AUTH_USER', 'HTTP_AUTH_PASSWORD'].any? { |v| !ENV[v].nil? && ENV[v] != '' })
-    use Rack::Auth::Basic, "Heroku Log Store" do |username, password|
+    use Rack::Auth::Basic, "Event Drain" do |username, password|
       authorized?(username, password)
     end
   end
@@ -15,7 +22,7 @@ class HerokuLogDrain < Goliath::API
   def response(env)
     case env['PATH_INFO']
     when '/drain' then
-      store_log(env[Goliath::Request::RACK_INPUT].read) if(env[Goliath::Request::REQUEST_METHOD] == 'POST')
+      proxy_log(env[Goliath::Request::RACK_INPUT].read) if(env[Goliath::Request::REQUEST_METHOD] == 'POST')
       [200, {}, "drained"]
     when '/' then
       [200, {}, haml(:index, :locals => {
@@ -29,9 +36,15 @@ class HerokuLogDrain < Goliath::API
 
   private
 
-  def store_log(log_str)
+  def proxy_log(log_str)
     event_data = HerokuLogParser.parse(log_str)
-    DB[:events].multi_insert(event_data, :commit_every => 10)
+    event_manager_values = DevcenterMessageParser.parse(event_data[:message])
+    event_manager_values.merge!({
+      "cloud": ENV['EVENT_MANAGER_CLOUD'],
+      "component": ENV['EVENT_MANAGER_COMPONENT'],
+      "type": ENV['EVENT_MANAGER_EVENT_ENTITY_TYPE']
+    })
+    http = EM::HttpRequest.new(ENV['EVENT_MANAGER_API_URL'], :inactivity_timeout => 5).post(body: event_manager_values, head: EVENT_MANAGER_HEADERS)
   end
 
   def self.protected?
