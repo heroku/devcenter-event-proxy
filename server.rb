@@ -3,11 +3,11 @@ require './lib/handlers/devcenter_event_manager_handler'
 
 class HerokuLogDrain < Goliath::API
 
-  # Clean up Goliath logging
   Goliath::Request.log_block = proc do |env, response, elapsed_time|
-    method = env[Goliath::Request::REQUEST_METHOD]
-    path = env[Goliath::Request::REQUEST_PATH]
-    env[Goliath::Request::RACK_LOGGER].info("at=info measure=server.requests method=#{method} path=#{path} val=#{'%.2f' % elapsed_time} units=ms")  
+    # Silence Goliath request logging - Heroku router gives us mostly the same thing
+    # method = env[Goliath::Request::REQUEST_METHOD]
+    # path = env[Goliath::Request::REQUEST_PATH]
+    # env[Goliath::Request::RACK_LOGGER].info("at=info measure=server.requests method=#{method} path=#{path} val=#{'%.2f' % elapsed_time} units=ms")  
   end
 
   use Rack::Auth::Basic, "Event Drain" do |u, p|
