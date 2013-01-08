@@ -28,8 +28,8 @@ class DevcenterEventManagerHandler
       if(!@multirequest)
         @multirequest = EventMachine::MultiRequest.new
         @multirequest.callback {
-          @multirequest.responses[:callbacks].each { |http| handle_response(http) } if @multirequest.responses[:callbacks]
-          @multirequest.responses[:errbacks].each { |http| handle_error(http) } if @multirequest.responses[:errbacks]
+          @multirequest.responses[:callback].each { |id, h| handle_response(h) }
+          @multirequest.responses[:errback].each { |id, h| handle_error(h) }
         }
       end
       @multirequest
@@ -38,14 +38,14 @@ class DevcenterEventManagerHandler
     def handle_response(http)
       if(http.response_header.status != 200)
         message = JSON.parse(http.response)['error_message']
-        puts "at=error measure=event-drain.handler.send-log.errors status=#{http.response_header.status} msg=\"#{message}\""
+        puts "at=error measure=event-drain.handler.send-log-error status=#{http.response_header.status} err=\"#{message}\""
       else
-        puts "at=info measure=event-drain.handler.send-log.successes"
+        puts "at=info measure=event-drain.handler.send-log"
       end
     end
 
     def handle_error(http)
-      puts "at=error measure=event-drain.handler.send-log.errors status=#{http.response_header.status} msg=\"#{http.error}\""
+      puts "at=error measure=event-drain.handler.send-log-errors status=#{http.response_header.status} err=\"#{http.error}\""
     end
   end
 end
