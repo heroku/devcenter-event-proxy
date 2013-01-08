@@ -37,14 +37,31 @@ class HerokuLogDrain < Goliath::API
   private
 
   def proxy_log(log_str)
-    event_data = HerokuLogParser.parse(log_str)
-    event_manager_values = DevcenterMessageParser.parse(event_data[:message])
-    event_manager_values.merge!({
-      "cloud": ENV['EVENT_MANAGER_CLOUD'],
-      "component": ENV['EVENT_MANAGER_COMPONENT'],
-      "type": ENV['EVENT_MANAGER_EVENT_ENTITY_TYPE']
-    })
-    http = EM::HttpRequest.new(ENV['EVENT_MANAGER_API_URL'], :inactivity_timeout => 5).post(body: event_manager_values, head: EVENT_MANAGER_HEADERS)
+    # multi = EventMachine::MultiRequest.new
+    events = HerokuLogParser.parse(log_str)
+    events.each do |event|
+      event_manager_values = DevcenterMessageParser.parse(event[:message])
+      event_manager_values.merge!({
+        'cloud' => ENV['EVENT_MANAGER_CLOUD'],
+        'component' => ENV['EVENT_MANAGER_COMPONENT'],
+        'type' => ENV['EVENT_MANAGER_EVENT_ENTITY_TYPE'],
+        'source_ip' => '0.0.0.0'
+      })
+      http = EM::HttpRequest.new(ENV['EVENT_MANAGER_API_URL'], :connect_timeout => 3, :inactivity_timeout => 5).post(body: JSON.dump(event_manager_values), head: EVENT_MANAGER_HEADERS)
+      http.callback { handle_response(http) }
+      http.errback { handle_error(http) }
+    end
+  end
+
+  def handle_response(http)
+    if(http.response_header.status != 200)
+      message = JSON.parse(http.response)['error_message']
+      puts "at=send-log status=error response=#{http.response_header.status} error=\"#{message}\" measure=true"
+    end
+  end
+
+  def handle_error(http message)
+    puts "at=send-log status=error response=#{http.response_header.status} error=\"#{http.error}\" message=\"#{message}\" measure=true"
   end
 
   def self.protected?
