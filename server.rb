@@ -17,7 +17,7 @@ class HerokuLogDrain < Goliath::API
   def response(env)
     case env['PATH_INFO']
     when '/drain' then
-      if(env[Goliath::Request::REQUEST_METHOD] == 'POST')
+      if(ENV['DRAIN'].to_i > 0 && env[Goliath::Request::REQUEST_METHOD] == 'POST')
         data = env[Goliath::Request::RACK_INPUT].read
         DevcenterEventManagerHandler.logs_received(data)    # Money shot
       end
