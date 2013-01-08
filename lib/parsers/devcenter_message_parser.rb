@@ -23,7 +23,7 @@ class DevcenterMessageParser
   EVENT_MSG_REGEX = /"event_type":"ArticleRead"/
 
   DEVCENTER_EVENT_MANAGER_KEY_MAPPINGS = {
-    'at' => lambda { |v| { timestamp: Time.parse(v).to_i }},
+    'at' => lambda { |v| { timestamp: Time.parse(v).to_f * 1000 }},
     'event_type' => lambda { |v| { action: 'view-article' } if v == 'ArticleRead' },
     'user_heroku_uid' => lambda { |v| { actor_id: v.to_i }},
     'user_email' => lambda { |v| { actor: v }},
