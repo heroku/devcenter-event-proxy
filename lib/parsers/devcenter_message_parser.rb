@@ -20,7 +20,7 @@ require 'time'
 
 class DevcenterMessageParser
 
-  EVENT_MSG_REGEX = /"event_type":/
+  EVENT_MSG_REGEX = /"event_type":"ArticleRead"/
 
   DEVCENTER_EVENT_MANAGER_KEY_MAPPINGS = {
     'at' => lambda { |v| { timestamp: Time.parse(v).to_i }},
