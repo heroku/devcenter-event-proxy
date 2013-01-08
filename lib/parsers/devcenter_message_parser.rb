@@ -38,15 +38,32 @@ class DevcenterMessageParser
     def parse(log_msg)
       if(EVENT_MSG_REGEX.match(log_msg))
         message_values = JSON.parse(log_msg).to_hash
-        event_manager_values = message_values.inject({}) do |result, (key, value)|
-          mapper = DEVCENTER_EVENT_MANAGER_KEY_MAPPINGS[key]
-          result.merge!(mapper.call(value)) if mapper
-          result
-        end
-        event_manager_values.merge!(attributes: { article_status: message_values['article_status'], article_title: message_values['article_title'] })
-        event_manager_values
+        parsed_values = extract_basic_values(message_values)
+        parsed_values.merge!(attributes: extract_attributes_values(message_values))
+        parsed_values.merge!(static_values)
+        parsed_values
       end
     end
-  end
 
+    def extract_basic_values(values)
+      values.inject({}) do |result, (key, value)|
+        mapper = DEVCENTER_EVENT_MANAGER_KEY_MAPPINGS[key]
+        result.merge!(mapper.call(value)) if mapper
+        result
+      end
+    end
+
+    def extract_attributes_values(values)
+      { article_status: values['article_status'], article_title: values['article_title'] }
+    end
+
+    def static_values
+      {
+        'cloud' => ENV['EVENT_MANAGER_CLOUD'],
+        'component' => ENV['EVENT_MANAGER_COMPONENT'],
+        'type' => ENV['EVENT_MANAGER_EVENT_ENTITY_TYPE'],
+        'source_ip' => '0.0.0.0'
+      }
+    end
+  end
 end

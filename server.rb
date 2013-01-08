@@ -24,11 +24,11 @@ class HerokuLogDrain < Goliath::API
     when '/drain' then
       proxy_log(env[Goliath::Request::RACK_INPUT].read) if(env[Goliath::Request::REQUEST_METHOD] == 'POST')
       [200, {}, "drained"]
-    when '/' then
-      [200, {}, haml(:index, :locals => {
-        :protected => self.class.protected?, :username => ENV['HTTP_AUTH_USER'], :password => ENV['HTTP_AUTH_PASSWORD'],
-        :event_count => DB[:events].count, :env => env
-      })]
+    # when '/' then
+    #   [200, {}, haml(:index, :locals => {
+    #     :protected => self.class.protected?, :username => ENV['HTTP_AUTH_USER'], :password => ENV['HTTP_AUTH_PASSWORD'],
+    #     :event_count => DB[:events].count, :env => env
+    #   })]
     else
       raise Goliath::Validation::NotFoundError
     end    
@@ -37,19 +37,9 @@ class HerokuLogDrain < Goliath::API
   private
 
   def proxy_log(log_str)
-    # multi = EventMachine::MultiRequest.new
-    events = HerokuLogParser.parse(log_str)
-    events.each do |event|
-      event_manager_values = DevcenterMessageParser.parse(event[:message])
-      event_manager_values.merge!({
-        'cloud' => ENV['EVENT_MANAGER_CLOUD'],
-        'component' => ENV['EVENT_MANAGER_COMPONENT'],
-        'type' => ENV['EVENT_MANAGER_EVENT_ENTITY_TYPE'],
-        'source_ip' => '0.0.0.0'
-      })
-      http = EM::HttpRequest.new(ENV['EVENT_MANAGER_API_URL'], :connect_timeout => 3, :inactivity_timeout => 5).post(body: JSON.dump(event_manager_values), head: EVENT_MANAGER_HEADERS)
-      http.callback { handle_response(http) }
-      http.errback { handle_error(http) }
+    HerokuLogParser.parse(log_str).each do |event|
+      body = JSON.dump(DevcenterMessageParser.parse(event[:message]))
+      multi.add SecureRandom.uuid, EM::HttpRequest.new(ENV['EVENT_MANAGER_API_URL'], :connect_timeout => 3, :inactivity_timeout => 5).post(body: body, head: EVENT_MANAGER_HEADERS)
     end
   end
 
@@ -60,8 +50,19 @@ class HerokuLogDrain < Goliath::API
     end
   end
 
-  def handle_error(http message)
+  def handle_error(http)
     puts "at=send-log status=error response=#{http.response_header.status} error=\"#{http.error}\" message=\"#{message}\" measure=true"
+  end
+
+  def multi
+    if(!@multirequest)
+      @multirequest = EventMachine::MultiRequest.new
+      @multirequest.callback {
+        @multirequest.responses[:callbacks].each { |http| handle_response(http) } if @multirequest.responses[:callbacks]
+        @multirequest.responses[:errbacks].each { |http| handle_error(http) } if @multirequest.responses[:errbacks]
+      }
+    end
+    @multirequest
   end
 
   def self.protected?
