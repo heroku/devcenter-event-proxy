@@ -38,12 +38,14 @@ class DevcenterEventManagerHandler
     def handle_response(http)
       if(http.response_header.status != 200)
         message = JSON.parse(http.response)['error_message']
-        puts "at=send-log status=error response=#{http.response_header.status} error=\"#{message}\" measure=true"
+        puts "at=error measure=event-drain.handler.send-log.errors status=#{http.response_header.status} msg=\"#{message}\""
+      else
+        puts "at=info measure=event-drain.handler.send-log.successes"
       end
     end
 
     def handle_error(http)
-      puts "at=send-log status=error response=#{http.response_header.status} error=\"#{http.error}\" message=\"#{message}\" measure=true"
+      puts "at=error measure=event-drain.handler.send-log.errors status=#{http.response_header.status} msg=\"#{http.error}\""
     end
   end
 end
