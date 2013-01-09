@@ -2,8 +2,6 @@ require 'json'
 require 'em-synchrony/em-http'
 require './lib/parsers/devcenter_message_parser'
 
-STDOUT.sync = true
-
 # Take log stream from Dev Center and send to Event Manager
 class DevcenterEventManagerHandler
 

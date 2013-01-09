@@ -7,13 +7,13 @@ require 'time'
 #
 # ArticleRead:
 # {
-#   "user_heroku_uid":"351369@users.heroku.com","user_email":"pdmjoe@gmail.com","article_id":650,"article_slug":"quickstart",
+#   "user_heroku_uid":"351369@users.heroku.com","user_email":"aguy@gmail.com","article_id":650,"article_slug":"quickstart",
 #   "article_status":"published","article_title":"Getting Started with Heroku","article_owner_id":58,"article_owner_email":"jon@heroku.com",
 #   "at":"2013-01-04T18:59:18+00:00","event_type":"ArticleRead"
 # }
 # =>
 # {
-#   :actor_id=>351369, :actor=>"pdmjoe@gmail.com", :target_id=>650, :target=>"quickstart", :owner_id=>58, :owner=>"jon@heroku.com",
+#   :actor_id=>351369, :actor=>"aguy@gmail.com", :target_id=>650, :target=>"quickstart", :owner_id=>58, :owner=>"jon@heroku.com",
 #   :timestamp=>1357325958, :action=>"view-article", :attributes=>{:article_status=>"published", :article_title=>"Getting Started with Heroku"}
 # }
 
@@ -26,7 +26,7 @@ class DevcenterMessageParser
     'event_type' => lambda do |v|
       return { action: 'view-article' } if v == 'ArticleRead'
       return { action: 'submit-feedback' } if v == 'ArticleFeedbackIssueCreated'
-      return { action: 'search' } if v == 'SearchResults'
+      return { action: 'search-articles' } if v == 'SearchResults'
       return { action: 'click-link' } if v == 'ExternalLinkClicked'
     end,
     'user_heroku_uid' => lambda { |v| { actor_id: v.to_i }},
