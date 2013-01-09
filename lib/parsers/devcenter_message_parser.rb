@@ -19,7 +19,7 @@ require 'time'
 
 class DevcenterMessageParser
 
-  EVENT_MSG_REGEX = /"event_type":"(ArticleRead|ExternalLinkClicked|ArticleFeedbackIssueCreated|SearchResults)"/
+  EVENT_MSG_REGEX = /"event_type":"(ArticleRead|ExternalLinkClicked|ArticleFeedbackIssueCreated)"/
 
   DEVCENTER_EVENT_MANAGER_KEY_MAPPINGS = {
     'at' => lambda { |v| { timestamp: Time.parse(v).to_f * 1000 }},
@@ -44,6 +44,7 @@ class DevcenterMessageParser
         message_values = JSON.parse(log_msg).to_hash
         parsed_values = extract_basic_values(message_values)
         parsed_values.merge!(attributes: extract_attributes_values(message_values))
+        parsed_values.merge!(normalize_non_article_events(parsed_values))
         parsed_values.merge!(static_values)
         parsed_values
       end
@@ -69,6 +70,23 @@ class DevcenterMessageParser
       when 'SearchResults' then
         { query: values['query'], results_count: values['results_size'], source: values['source'] }
       end
+    end
+
+    # Some events, like performing a Dev Center search, don't apply to a specific article
+    # and, thus, don't have a logical target or owner (which is required by event manager).
+    # So, set the user performing the action as the target and owner (a pattern used by other
+    # event-manager publishers)
+    def normalize_non_article_events(em_values)
+      n_values = {}
+      if(!em_values.key?(:target))
+        n_values[:target] = em_values[:actor]
+        n_values[:target_id] = em_values[:actor_id]
+      end
+      if(!em_values.key?(:owner))
+        n_values[:owner] = em_values[:actor]
+        n_values[:owner_id] = em_values[:actor_id]
+      end
+      n_values
     end
 
     def static_values
