@@ -39,6 +39,8 @@ class DevcenterMessageParser
 
   class << self
 
+    # Given a single log message (just the message portion of the raw htto logplex string)
+    # create an event-manager compatible value hash
     def parse(log_msg)
       if(EVENT_MSG_REGEX.match(log_msg))
         message_values = JSON.parse(log_msg).to_hash

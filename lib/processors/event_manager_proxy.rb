@@ -1,9 +1,7 @@
 require 'json'
 require 'em-synchrony/em-http'
-require './lib/parsers/devcenter_message_parser'
 
-# Take log stream from Dev Center and send to Event Manager
-class DevcenterEventManagerHandler
+class EventManagerProxy
 
   EVENT_MANAGER_HEADERS = {
     'content-type' => 'application/json',
@@ -11,17 +9,16 @@ class DevcenterEventManagerHandler
   }
 
   class << self
-    
-    def logs_received(log_str)
-      HerokuLogParser.parse(log_str).each do |event|
-        sendable_values = DevcenterMessageParser.parse(event[:message])
-        if(sendable_values && sendable_values.any?)
-          body = JSON.dump(sendable_values)
+
+    def process(value_hashes)
+      value_hashes.each do |value_hash|
+        if(value_hash && value_hash.any?)
+          body = JSON.dump(value_hash)
           multi.add SecureRandom.uuid, EM::HttpRequest.new(ENV['EVENT_MANAGER_API_URL'], :connect_timeout => 3, :inactivity_timeout => 6).post(
             body: body, head: EVENT_MANAGER_HEADERS
           )
         end
-      end
+      end if value_hashes
     end
 
     def multi

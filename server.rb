@@ -1,5 +1,4 @@
 require './config'
-require './lib/handlers/devcenter_event_manager_handler'
 
 class HerokuLogDrain < Goliath::API
 
@@ -18,8 +17,7 @@ class HerokuLogDrain < Goliath::API
     case env['PATH_INFO']
     when '/drain' then
       if(ENV['DRAIN'].to_i > 0 && env[Goliath::Request::REQUEST_METHOD] == 'POST')
-        data = env[Goliath::Request::RACK_INPUT].read
-        DevcenterEventManagerHandler.logs_received(data)    # Money shot
+        LOG_MANAGER.logs_received(env[Goliath::Request::RACK_INPUT].read)
       end
       [200, {}, "drained"]
     else
