@@ -1,7 +1,7 @@
 require 'bundler/setup'
 Bundler.require
 
-STDOUT.sync = true
+$stdout.sync = true
 
 require './lib/managers/log_manager'
 require './lib/parsers/devcenter_message_parser'
