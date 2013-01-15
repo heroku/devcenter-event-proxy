@@ -19,36 +19,32 @@ require 'time'
 
 class DevcenterMessageParser
 
-  EVENT_MSG_REGEX = /"event_type":"(ArticleRead|ExternalLinkClicked|ArticleFeedbackIssueCreated)"/
+  EVENT_MSG_REGEX = /"event_type":"(PageVisit|ArticleFeedbackIssueCreated)"/
 
   DEVCENTER_EVENT_MANAGER_KEY_MAPPINGS = {
     'at' => lambda { |v| { timestamp: Time.parse(v).to_f * 1000 }},
     'event_type' => lambda do |v|
-      return { action: 'view-article' } if v == 'ArticleRead'
+      return { action: 'visit-page' } if v == 'PageVisit'
       return { action: 'submit-feedback' } if v == 'ArticleFeedbackIssueCreated'
-      return { action: 'search-articles' } if v == 'SearchResults'
-      return { action: 'click-link' } if v == 'ExternalLinkClicked'
     end,
     'user_heroku_uid' => lambda { |v| { actor_id: v.to_i }},
     'user_email' => lambda { |v| { actor: v }},
-    'article_slug' => lambda { |v| { target: v }},
-    'article_id' => lambda { |v| { target_id: v }},
-    'article_owner_id' => lambda { |v| { owner_id: v }},
-    'article_owner_email' => lambda { |v| { owner: v }}
+    'page_url' => lambda { |v| { target: v }},
+    'url' => lambda { |v| { target: v }}
   }
 
   class << self
 
-    # Given a single log message (just the message portion of the raw htto logplex string)
+    # Given a single log message (just the message portion of the raw http logplex string)
     # create an event-manager compatible value hash
     def parse(log_msg)
       if(EVENT_MSG_REGEX.match(log_msg))
         message_values = JSON.parse(log_msg).to_hash
         parsed_values = extract_basic_values(message_values)
         parsed_values.merge!(attributes: extract_attributes_values(message_values))
-        parsed_values.merge!(normalize_non_article_events(parsed_values))
+        parsed_values.merge!(normalize_missing_data(parsed_values))
         parsed_values.merge!(static_values)
-        parsed_values
+        parsed_values[:actor] ? parsed_values : nil
       end
     end
 
@@ -63,32 +59,19 @@ class DevcenterMessageParser
 
     def extract_attributes_values(values)
       case values['event_type']
-      when 'ArticleRead' then
-        { article_status: values['article_status'], article_title: values['article_title'] }
-      when 'ExternalLinkClicked' then
-        { url: values['target_url'], article_status: values['article_status'], article_title: values['article_title'] }
+      when 'PageVisit' then
+        { page_title: values['page_title'], page_query_string: values['page_query_string'], referrer_url: values['referrer_url'],
+          referrer_query_string: values['referrer_query_string'] }
       when 'ArticleFeedbackIssueCreated' then
-        { feedback: values['text'], article_status: values['article_status'], article_title: values['article_title'] }
-      when 'SearchResults' then
-        { query: values['query'], results_count: values['results_size'], source: values['source'] }
+        { feedback: values['text'], page_title: values['article_title'] }
       end
     end
 
-    # Some events, like performing a Dev Center search, don't apply to a specific article
-    # and, thus, don't have a logical target or owner (which is required by event manager).
-    # So, set the user performing the action as the target and owner (a pattern used by other
-    # event-manager publishers)
-    def normalize_non_article_events(em_values)
-      n_values = {}
-      if(!em_values.key?(:target))
-        n_values[:target] = em_values[:actor]
-        n_values[:target_id] = em_values[:actor_id]
-      end
-      if(!em_values.key?(:owner))
-        n_values[:owner] = em_values[:actor]
-        n_values[:owner_id] = em_values[:actor_id]
-      end
-      n_values
+    def normalize_missing_data(em_values)
+      missing_values = {}
+      missing_values[:owner] = em_values[:actor] if !em_values.key?(:owner)
+      missing_values[:owner_id] = em_values[:actor_id] if !em_values.key?(:owner_id)
+      missing_values
     end
 
     def static_values
@@ -96,7 +79,8 @@ class DevcenterMessageParser
         'cloud' => ENV['EVENT_MANAGER_CLOUD'],
         'component' => ENV['EVENT_MANAGER_COMPONENT'],
         'type' => ENV['EVENT_MANAGER_EVENT_ENTITY_TYPE'],
-        'source_ip' => '0.0.0.0'
+        'source_ip' => '0.0.0.0',
+        'target_id' => -1
       }
     end
   end
