@@ -10,6 +10,7 @@ class EventManagerProxy
       value_hashes.each do |value_hash|
         if(value_hash && value_hash.any?)
           body = JSON.dump(value_hash)
+          puts body
           multi.add SecureRandom.uuid, EM::HttpRequest.new(connection_url, connection_opts).post(
               body: body, head: connection_headers
           )
