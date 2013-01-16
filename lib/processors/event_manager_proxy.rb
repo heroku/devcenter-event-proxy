@@ -10,7 +10,6 @@ class EventManagerProxy
       value_hashes.each do |value_hash|
         if(value_hash && value_hash.any?)
           body = JSON.dump(value_hash)
-          puts body
           multi.add SecureRandom.uuid, EM::HttpRequest.new(connection_url, connection_opts).post(
               body: body, head: connection_headers
           )
@@ -34,7 +33,7 @@ class EventManagerProxy
         message = JSON.parse(http.response)['error_message']
         puts "at=error measure=event-drain.event-manager-proxy.event-errors status=#{http.response_header.status} err=\"#{message}\""
       else
-        puts "at=info measure=event-drain.event-manager-proxy.events"
+        puts "at=info measure=event-drain.event-manager-proxy.events status=#{http.response_header.status}"
       end
     end
 
