@@ -27,8 +27,8 @@ class DevcenterMessageParser
       return { action: 'visit-page' } if v == 'PageVisit'
       return { action: 'submit-feedback' } if v == 'ArticleFeedbackIssueCreated'
     end,
-    'user_heroku_uid' => lambda { |v| { actor_id: v.to_i } if !v.nil? },
-    'user_email' => lambda { |v| { actor: v } if !v.nil? },
+    'user_heroku_uid' => lambda { |v| v.nil? ? {} : { actor_id: v.to_i } },
+    'user_email' => lambda { |v| v.nil? ? {} : { actor: v } },
     'page_url' => lambda { |v| { target: v }},
     'url' => lambda { |v| { target: v }}
   }
