@@ -1,8 +1,8 @@
 GIT
   remote: git://github.com/rwdaigle/heroku-log-parser.git
-  revision: 2d73552940638e78d8accbcdd98506015e6be809
+  revision: fbf7c8b58110de1892b7ef7fd42420bbf7e6f2f1
   specs:
-    heroku-log-parser (0.2)
+    heroku-log-parser (0.2.2)
 
 GEM
   remote: https://rubygems.org/

@@ -38,7 +38,9 @@ class DevcenterMessageParser
     # Given a single log message (just the message portion of the raw http logplex string)
     # create an event-manager compatible value hash
     def parse(log_msg)
+      puts "at=debug event=parse log-msg=\"#{log_msg.inspect}\""
       if(EVENT_MSG_REGEX.match(log_msg))
+        puts "at=debug event=regex-match log-msg=\"#{log_msg.inspect}\""
         message_values = JSON.parse(log_msg).to_hash
         parsed_values = extract_basic_values(message_values)
         parsed_values.merge!(attributes: extract_attributes_values(message_values))
