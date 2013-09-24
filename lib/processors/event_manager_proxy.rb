@@ -31,14 +31,14 @@ class EventManagerProxy
     def handle_response(http)
       if(http.response_header.status != 200)
         message = JSON.parse(http.response)['error_message']
-        puts "at=error measure=event-drain.event-manager-proxy.event-errors status=#{http.response_header.status} err=\"#{message}\""
+        puts "count#devcenter-event-proxy.events.failed=1 status=#{http.response_header.status} error=\"#{message}\""
       else
-        puts "at=info measure=event-drain.event-manager-proxy.events status=#{http.response_header.status}"
+        puts "count#devcenter-event-proxy.events.delivered=1 status=#{http.response_header.status}"
       end
     end
 
     def handle_error(http)
-      puts "at=error measure=event-drain.event-manager-proxy.event-errors status=#{http.response_header.status} err=\"#{http.error}\""
+      puts "count#devcenter-event-proxy.events.failed=1 status=#{http.response_header.status} error=\"#{message}\""
     end
 
     #--- Connection info
