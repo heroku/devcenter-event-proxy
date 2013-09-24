@@ -1,1 +1,1 @@
-rvm use ruby-2.0.0@devcenter-event-proxy --create
+rvm use ruby-1.9.3@event-drain --create
