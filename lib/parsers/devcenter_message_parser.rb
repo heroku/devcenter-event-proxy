@@ -30,7 +30,8 @@ class DevcenterMessageParser
     'user_heroku_uid' => lambda { |v| v.nil? ? {} : { actor_id: v.to_i } },
     'user_email' => lambda { |v| v.nil? ? {} : { actor: v } },
     'page_url' => lambda { |v| { target: v }},
-    'url' => lambda { |v| { target: v }}
+    'url' => lambda { |v| { target: v }},
+    'component' => lambda { |v| { component: v }}
   }
 
   class << self
@@ -71,13 +72,13 @@ class DevcenterMessageParser
       missing_values = {}
       missing_values[:owner] = em_values[:actor] if !em_values.key?(:owner)
       missing_values[:owner_id] = em_values[:actor_id] if !em_values.key?(:owner_id)
+      missing_values[:component] = "devcenter" if !em_values.key?(:component)
       missing_values
     end
 
     def static_values
       {
         'cloud' => ENV['EVENT_MANAGER_CLOUD'],
-        'component' => ENV['EVENT_MANAGER_COMPONENT'],
         'type' => ENV['EVENT_MANAGER_EVENT_ENTITY_TYPE'],
         'source_ip' => '0.0.0.0',
         'target_id' => -1
