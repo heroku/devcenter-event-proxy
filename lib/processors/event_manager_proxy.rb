@@ -29,16 +29,18 @@ class EventManagerProxy
     end
 
     def handle_response(http)
+      component = JSON.parse(http.req.body)['component']
       if(http.response_header.status != 200)
         message = JSON.parse(http.response)['error_message']
-        puts "count#devcenter-event-proxy.events.failed=1 status=#{http.response_header.status} error=\"#{message}\""
+        puts "source=#{component} count#devcenter-event-proxy.events.failed=1 status=#{http.response_header.status} error=\"#{message}\""
       else
-        puts "count#devcenter-event-proxy.events.delivered=1 status=#{http.response_header.status}"
+        puts "source=#{component} count#devcenter-event-proxy.events.delivered=1 status=#{http.response_header.status}"
       end
     end
 
     def handle_error(http)
-      puts "count#devcenter-event-proxy.events.failed=1 status=#{http.response_header.status} error=\"#{message}\""
+      component = JSON.parse(http.req.body)['component']
+      puts "source=#{component} count#devcenter-event-proxy.events.failed=1 status=#{http.response_header.status} error=\"#{message}\""
     end
 
     #--- Connection info
