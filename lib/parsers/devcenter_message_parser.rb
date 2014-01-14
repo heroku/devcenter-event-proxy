@@ -19,13 +19,14 @@ require 'time'
 
 class DevcenterMessageParser
 
-  EVENT_MSG_REGEX = /"event_type":"(PageVisit|ArticleFeedbackIssueCreated)"/
+  EVENT_MSG_REGEX = /"event_type":"(PageVisit|ArticleFeedbackIssueCreated|Download)"/
 
   DEVCENTER_EVENT_MANAGER_KEY_MAPPINGS = {
     'at' => lambda { |v| { timestamp: Time.parse(v).to_f * 1000 }},
     'event_type' => lambda do |v|
       return { action: 'visit-page' } if v == 'PageVisit'
       return { action: 'submit-feedback' } if v == 'ArticleFeedbackIssueCreated'
+      return { action: 'download' } if v == 'Download'
     end,
     'user_heroku_uid' => lambda { |v| v.nil? ? {} : { actor_id: v.to_i } },
     'user_email' => lambda { |v| v.nil? ? {} : { actor: v } },
