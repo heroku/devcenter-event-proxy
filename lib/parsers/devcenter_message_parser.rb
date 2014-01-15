@@ -61,7 +61,7 @@ class DevcenterMessageParser
 
     def extract_attributes_values(values)
       case values['event_type']
-      when 'PageVisit' then
+      when 'PageVisit', 'Download' then
         { page_title: values['page_title'], page_query_string: values['page_query_string'], referrer_url: values['referrer_url'],
           referrer_query_string: values['referrer_query_string'] }
       when 'ArticleFeedbackIssueCreated' then
