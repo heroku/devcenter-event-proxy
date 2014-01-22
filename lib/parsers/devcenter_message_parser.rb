@@ -32,6 +32,7 @@ class DevcenterMessageParser
     'user_email' => lambda { |v| v.nil? ? {} : { actor: v } },
     'page_url' => lambda { |v| { target: v }},
     'url' => lambda { |v| { target: v }},
+    'source_ip' => lambda { |v| { source_ip: v }},
     'component' => lambda { |v| { component: v }}
   }
 
@@ -63,9 +64,9 @@ class DevcenterMessageParser
       case values['event_type']
       when 'PageVisit', 'Download' then
         { page_title: values['page_title'], page_query_string: values['page_query_string'], referrer_url: values['referrer_url'],
-          referrer_query_string: values['referrer_query_string'] }
+          referrer_query_string: values['referrer_query_string'], source_ip: values['source_ip'] }
       when 'ArticleFeedbackIssueCreated' then
-        { feedback: values['text'], page_title: values['article_title'] }
+        { feedback: values['text'], page_title: values['article_title'], source_ip: values['source_ip'] }
       end
     end
 
@@ -81,7 +82,6 @@ class DevcenterMessageParser
       {
         'cloud' => ENV['EVENT_MANAGER_CLOUD'],
         'type' => ENV['EVENT_MANAGER_EVENT_ENTITY_TYPE'],
-        'source_ip' => '0.0.0.0',
         'target_id' => -1
       }
     end
