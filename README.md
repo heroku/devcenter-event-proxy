@@ -1,3 +1,5 @@
+# Deprecated
+
 # devcenter-event-proxy
 
 Receive a logplex stream, turn it into event-manager-api `publish` calls.
